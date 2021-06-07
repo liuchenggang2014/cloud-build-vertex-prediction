@@ -6,7 +6,6 @@ steps:
   args: ['build', '-t', 'gcr.io/cliu201/sklearn-fastapi-server', '.']
 
 #2. Upload models to gcs
-- name: 'gcr.io/cloud-builders/gsutil'
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   args: ['gsutil', 'cp','${_MODEL}', 'gs://${_MODEL_BUCKET}/${_PREFIX}/'] 
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
