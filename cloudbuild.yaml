@@ -1,0 +1,63 @@
+# In this directory, run the following command to build this builder.
+# $ gcloud builds submit . --config=cloudbuild.yaml --substitutions _BUCKET='<bucket name>'
+steps:
+# step1: build the sklearn image
+# - name: 'gcr.io/cloud-builders/docker'
+#   args: ['build', '-t', 'gcr.io/cliu201/sklearn-fastapi-server', '.']
+
+#2. Upload models to gcs
+# - name: 'gcr.io/cloud-builders/gsutil'
+# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#   args: ['gsutil', 'cp','${_MODEL}', 'gs://${_MODEL_BUCKET}/${_PREFIX}/'] 
+# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+#   args: ['gsutil', 'cp','${_PREPROCESSOR}', 'gs://${_MODEL_BUCKET}/${_PREFIX}/'] 
+
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: gcloud
+  args: ['version' ] 
+
+#3. upload to vertex models
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: gcloud
+  args: ['ai',  'models',  'upload',  '--region=${_REGION}', '--display-name=${_MODEL_NAME}',
+  '--container-image-uri=gcr.io/cliu201/sklearn-fastapi-server',
+  '--artifact-uri=gs://${_MODEL_BUCKET}/${_PREFIX}' ] 
+
+#4. create endpoint
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: gcloud
+  args: ['ai', 'endpoints', 'create',
+  '--region=${_REGION}',
+  '--display-name=${_MODEL_NAME}'] 
+
+#5. get the model id and endpoint id to deploy model
+# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+- name: 'gcr.io/cloud-builders/gcloud'
+  entrypoint: 'bash'
+  args: 
+    - "-c"
+    - |
+      endpoint_id=`gcloud ai endpoints list --region=${_REGION} --filter=display_name=${_MODEL_NAME} --format="value(name)"` \
+      && model_id=`gcloud ai models list --region=${_REGION} --filter=display_name=${_MODEL_NAME} --format="value(name)"` \
+      && gcloud ai endpoints deploy-model ${endpoint_id} --region=${_REGION} \
+      --model=${model_id} \
+      --display-name=${_MODEL_NAME} \
+      --machine-type=n1-standard-4 \
+      --min-replica-count=1 \
+      --max-replica-count=2 \
+      --traffic-split=0=100
+
+
+# push the image into registry
+# images:
+# - gcr.io/cliu201/sklearn-fastapi-server
+
+substitutions:
+  # _BUCKET: cliu201-tf-backend
+  # _MODEL: model.joblib
+  # _PREPROCESSOR: preprocessor.pkl
+  _MODEL_BUCKET: cliu201-uscentral1
+  _PREFIX: custom-container-prediction-model
+  _REGION: us-central1
+  _MODEL_NAME: "sklearn_custom_container_cb"
+tags: ['cloud-ai-vertex-gcloud']
