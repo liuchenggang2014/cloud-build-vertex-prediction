@@ -2,15 +2,15 @@
 # $ gcloud builds submit . --config=cloudbuild.yaml --substitutions _BUCKET='<bucket name>'
 steps:
 # step1: build the sklearn image
-# - name: 'gcr.io/cloud-builders/docker'
-#   args: ['build', '-t', 'gcr.io/cliu201/sklearn-fastapi-server', '.']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/cliu201/sklearn-fastapi-server', '.']
 
 #2. Upload models to gcs
-# - name: 'gcr.io/cloud-builders/gsutil'
-# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-#   args: ['gsutil', 'cp','${_MODEL}', 'gs://${_MODEL_BUCKET}/${_PREFIX}/'] 
-# - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-#   args: ['gsutil', 'cp','${_PREPROCESSOR}', 'gs://${_MODEL_BUCKET}/${_PREFIX}/'] 
+- name: 'gcr.io/cloud-builders/gsutil'
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  args: ['gsutil', 'cp','${_MODEL}', 'gs://${_MODEL_BUCKET}/${_PREFIX}/'] 
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  args: ['gsutil', 'cp','${_PREPROCESSOR}', 'gs://${_MODEL_BUCKET}/${_PREFIX}/'] 
 
 - name: 'gcr.io/cloud-builders/gcloud'
   entrypoint: gcloud
@@ -53,9 +53,8 @@ steps:
 # - gcr.io/cliu201/sklearn-fastapi-server
 
 substitutions:
-  # _BUCKET: cliu201-tf-backend
-  # _MODEL: model.joblib
-  # _PREPROCESSOR: preprocessor.pkl
+  _MODEL: model.joblib
+  _PREPROCESSOR: preprocessor.pkl
   _MODEL_BUCKET: cliu201-uscentral1
   _PREFIX: custom-container-prediction-model
   _REGION: us-central1
